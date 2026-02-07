@@ -1,22 +1,23 @@
-
-class NotEnoughArgs extends Error {}
+import { NotEnoughArgs } from "./errors.ts"
+import { ExeLoader } from "./ExeLoader.ts"
+import { trimOffPathAndFilename } from "./helpers.ts"
 
 function main(argc: number, argv: string[]): number {
 
     const args = trimOffPathAndFilename(argv)
 
-    if (args.length < 1)
+    if (args.length < 1) {
         throw new NotEnoughArgs()
+    }
 
+    try {
+        ExeLoader.run(args[0]!)
+    } catch (error) {
+        console.log(`Fatal error: ${(error as Error).message}`)
+        return 1
+    }
 
-    console.log(args.length)
-    console.log(args)
-
-    return 1
-}
-
-function trimOffPathAndFilename(argv: string[]) {
-    return argv.slice(2)
+    return 0
 }
 
 process.exit(main(process.argv.length, process.argv))
