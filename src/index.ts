@@ -11,9 +11,11 @@ function main(argc: number, argv: string[]): number {
     }
 
     try {
-        ExeLoader.run(args[0]!)
+        const exe = ExeLoader.Parse(args[0]!)
+        console.log(exe.toString())
     } catch (error) {
         console.log(`Fatal error: ${(error as Error).message}`)
+        console.dir(error)
         return 1
     }
 

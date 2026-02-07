@@ -8,5 +8,6 @@ class ClonableError extends Error {
 
 }
 export class NotEnoughArgs extends ClonableError { }
-export class FileLoadError extends ClonableError {
-}
+export class FileLoadError extends ClonableError { }
+export class NotEnoughDataError extends ClonableError { }
+export class ParseringErrior extends ClonableError { }
