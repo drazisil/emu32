@@ -13,3 +13,7 @@ export function getShort(data: Buffer, offset: number) {
 export function getLong(data: Buffer, offset: number) {
     return data.readUInt32LE(offset)
 }
+
+export function putLong(data: Buffer, offset: number, value: number) {
+    data.writeUInt32LE(value, offset)
+}

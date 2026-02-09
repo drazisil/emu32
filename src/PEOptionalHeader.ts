@@ -1,8 +1,73 @@
 import { InvalidFormatCodeError, NotSupportedPEFormat } from "./errors.ts"
-import { getByte, getLong, getShort } from "./helpers.ts"
+import { getByte, getLong, getShort, putLong } from "./helpers.ts"
 
 const PE32 = 0x10b
 const PE32Plus = 0x20b
+
+class DataDirectoryEntry {
+    private virtualAddress = Buffer.alloc(4) // 4
+    private size = Buffer.alloc(4) // 4
+
+    static getSizeOf() {
+        return 8
+    }
+
+    getVirtualAddress() {
+        return getLong(this.virtualAddress, 0)
+    }
+
+    setVirtualAddress(value: number) {
+        putLong(this.virtualAddress, 0, value)
+    }
+
+    getSize() {
+        return getLong(this.size, 0)
+    }
+
+    setSize(value: number) {
+        putLong(this.size, 0, value)
+    }
+
+    static Read(data: Buffer) {
+        const self = new DataDirectoryEntry()
+        self.setVirtualAddress(getLong(data, 0))
+        self.setSize(getLong(data, 4))
+        return self
+    }
+
+    write() {
+        const b = Buffer.alloc(DataDirectoryEntry.getSizeOf())
+        this.virtualAddress.copy(b, 0)
+        this.size.copy(b, 4)
+        return b
+    }
+
+    toString() {
+        return `${this.getVirtualAddress()}, Size: ${this.getSize()}\n`
+    }
+}
+
+class DataDirectoryList {
+    private entries: DataDirectoryEntry[] = []
+    static Read(data: Buffer<ArrayBufferLike>, numberOfRvaAndSizes: number) {
+        const self = new DataDirectoryList()
+        for (let i = 0; i < numberOfRvaAndSizes; i++) {
+            let start = DataDirectoryEntry.getSizeOf() * i
+            let end = start + DataDirectoryEntry.getSizeOf()
+            self.entries[i] = DataDirectoryEntry.Read(data.subarray(start, end))
+        }
+        return self
+    }
+
+    toString() {
+        let o = ""
+        this.entries.forEach(entry => {
+            o += entry.toString()
+        })
+        return o
+    }
+
+}
 
 class PEOptionalHeader32 {
     private imageBase // 4
@@ -15,9 +80,42 @@ class PEOptionalHeader32 {
     private majorSubsystemVersion // 2
     private minorSubsystemVersion // 2
     private win32VersionValue // 4
+    private sizeOfImage // 4
+    private sizeOfHeader // 4
+    private checksum // 4
+    private subsystem // 2
+    private dllCharacteristics // 2
+    private sizeOfStackReserve // 8
+    private sizeOfStackCommit // 8
+    private sizeOfHeapReserve // 8
+    private sizeOfHeapCommit // 8
+    private loaderFlags // 4
+    private numberOfRvaAndSizes // 4
+    private dataDirectories // 
 
     constructor(data: Buffer) {
-        
+        this.imageBase = getLong(data, 0)
+        this.sectionAlignment = getLong(data, 4)
+        this.fileAlignmnt = getLong(data, 8)
+        this.majorOpereratingSystemVersion = getShort(data, 12)
+        this.minorOperatingSystemVersion = getShort(data, 14)
+        this.majorImageVersion = getShort(data, 16)
+        this.minorImageVersion = getShort(data, 18)
+        this.majorSubsystemVersion = getShort(data, 20)
+        this.minorSubsystemVersion = getShort(data, 22)
+        this.win32VersionValue = getLong(data, 24)
+        this.sizeOfImage = getLong(data, 28)
+        this.sizeOfHeader = getLong(data, 32)
+        this.checksum = getLong(data, 36)
+        this.subsystem = getShort(data, 40)
+        this.dllCharacteristics = getShort(data, 42)
+        this.sizeOfStackReserve = getLong(data, 44)
+        this.sizeOfStackCommit = getLong(data, 48)
+        this.sizeOfHeapReserve = getLong(data, 52)
+        this.sizeOfHeapCommit = getLong(data, 56)
+        this.loaderFlags = getLong(data, 60)
+        this.numberOfRvaAndSizes = getLong(data, 64)
+        this.dataDirectories = DataDirectoryList.Read(data.subarray(68), this.numberOfRvaAndSizes)
     }
 
     static Parse(data: Buffer): PEOptionalHeader32 {
@@ -26,7 +124,24 @@ class PEOptionalHeader32 {
 
     toString() {
         return "".concat(
-
+            `Image base: ${this.imageBase}\n`,
+            `Section alignment: ${this.sectionAlignment}\n`,
+            `File alignment: ${this.fileAlignmnt}\n`,
+            `OS Version: ${this.majorOpereratingSystemVersion}.${this.minorOperatingSystemVersion}\n`,
+            `Image version: ${this.majorImageVersion}.${this.minorImageVersion}\n`,
+            `Subsystem Version: ${this.majorSubsystemVersion}.${this.minorSubsystemVersion}\n`,
+            `Win32 version: ${this.win32VersionValue}\n`,
+            `Size of Image: ${this.sizeOfImage}\n`,
+            `Size of headers: ${this.sizeOfHeader}\n`,
+            `Subsystem: ${this.subsystem}\n`,
+            `DLL Characteristics: ${this.dllCharacteristics}\n`,
+            `Size of Stack reserve: ${this.sizeOfStackReserve}\n`,
+            `Size of Stack commit: ${this.sizeOfStackCommit}\n`,
+            `Size of Heap reserve: ${this.sizeOfHeapReserve}\n`,
+            `Size of Heap Commit: ${this.sizeOfHeapCommit}\n`,
+            `Loader flag: ${this.loaderFlags}\n`,
+            `Number of data directiories: ${this.numberOfRvaAndSizes}\n`,
+            this.dataDirectories.toString()
         )
     }
 }
@@ -45,6 +160,7 @@ export class PEOptionalHeader {
     private sizeofUninitializedData // 4
     private addressOfEntryPoint // 4
     private baseOfCode // 4
+    private baseOfData // 4
     private extraFields: PEOptionalHeader32 | PEOptionalHeader64
 
     constructor(data: Buffer) {
@@ -56,7 +172,8 @@ export class PEOptionalHeader {
         this.sizeofUninitializedData = getLong(data, 12)
         this.addressOfEntryPoint = getLong(data, 16)
         this.baseOfCode = getLong(data, 20)
-        const startOfExtraFields = 24
+        this.baseOfData = getLong(data, 24)
+        const startOfExtraFields = 28
         this.extraFields = this.peFormat === "PE32" ? PEOptionalHeader32.Parse(data.subarray(startOfExtraFields)) : PEOptionalHeader64.Parse(data.subarray(startOfExtraFields))
     }
 
@@ -82,4 +199,4 @@ export class PEOptionalHeader {
             this.extraFields.toString()
         )
     }
- }
+}
