@@ -1,73 +1,9 @@
+import { DataDirectoryList } from "./DataDirectory.ts"
 import { InvalidFormatCodeError, NotSupportedPEFormat } from "./errors.ts"
-import { getByte, getLong, getShort, putLong } from "./helpers.ts"
+import { getByte, getLong, getShort } from "./helpers.ts"
 
 const PE32 = 0x10b
 const PE32Plus = 0x20b
-
-class DataDirectoryEntry {
-    private virtualAddress = Buffer.alloc(4) // 4
-    private size = Buffer.alloc(4) // 4
-
-    static getSizeOf() {
-        return 8
-    }
-
-    getVirtualAddress() {
-        return getLong(this.virtualAddress, 0)
-    }
-
-    setVirtualAddress(value: number) {
-        putLong(this.virtualAddress, 0, value)
-    }
-
-    getSize() {
-        return getLong(this.size, 0)
-    }
-
-    setSize(value: number) {
-        putLong(this.size, 0, value)
-    }
-
-    static Read(data: Buffer) {
-        const self = new DataDirectoryEntry()
-        self.setVirtualAddress(getLong(data, 0))
-        self.setSize(getLong(data, 4))
-        return self
-    }
-
-    write() {
-        const b = Buffer.alloc(DataDirectoryEntry.getSizeOf())
-        this.virtualAddress.copy(b, 0)
-        this.size.copy(b, 4)
-        return b
-    }
-
-    toString() {
-        return `${this.getVirtualAddress()}, Size: ${this.getSize()}\n`
-    }
-}
-
-class DataDirectoryList {
-    private entries: DataDirectoryEntry[] = []
-    static Read(data: Buffer<ArrayBufferLike>, numberOfRvaAndSizes: number) {
-        const self = new DataDirectoryList()
-        for (let i = 0; i < numberOfRvaAndSizes; i++) {
-            let start = DataDirectoryEntry.getSizeOf() * i
-            let end = start + DataDirectoryEntry.getSizeOf()
-            self.entries[i] = DataDirectoryEntry.Read(data.subarray(start, end))
-        }
-        return self
-    }
-
-    toString() {
-        let o = ""
-        this.entries.forEach(entry => {
-            o += entry.toString()
-        })
-        return o
-    }
-
-}
 
 class PEOptionalHeader32 {
     private imageBase // 4
