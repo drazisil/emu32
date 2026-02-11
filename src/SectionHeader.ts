@@ -49,7 +49,10 @@ export class SectionHeader {
             `Size of Raw Data: ${this.sizeOfRawData}\n`,
             `Pointer to raw data: ${this.pointerToRawData}\n`,
             `Pointer to relocations: ${this.pointerToRelocations}\n`,
-            `Pointer to line numbers: ${this.pointerToLineNumbers}\n`
+            `Pointer to line numbers: ${this.pointerToLineNumbers}\n`,
+            `Number of relocations: ${this.numberOfRelocations}\n`,
+            `Number of line numbers: ${this.numberOfLineNumbers}\n`,
+            `Characteristics: ${this.characteristics}\n`
         );
     }
 }
