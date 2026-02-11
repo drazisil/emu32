@@ -1,18 +1,28 @@
+import { SectionHeader } from "./SectionHeader.ts"
 
 export class PESectionTable {
-    private name: string
+    private sectionHeaders: SectionHeader[] = []
 
-    constructor(data: Buffer) {
-        this.name = data.subarray(0, 8).toString("utf8")
+    constructor(data: Buffer, numberOfSections: number) {
+        for (let i = 0; i < numberOfSections; i++) {
+            this.sectionHeaders.push(SectionHeader.parse(data.subarray(i * SectionHeader.getSizeOf())))
+            
+        }
     }
 
-    static parse(data: Buffer<ArrayBufferLike>): PESectionTable {
-        return new PESectionTable(data)
+    static parse(data: Buffer<ArrayBufferLike>, numberOfSections : number): PESectionTable {
+        return new PESectionTable(data, numberOfSections)
     } 
 
     toString() {
-        return "".concat("Section Table\n")
+                let o = "";
+        this.sectionHeaders.forEach(entry => {
+            o += entry.toString();
+        });
+        return "".concat("Section Table\n",
+            `${o}\n`
+        )
     }
 
 }
-export class PESection { }
+

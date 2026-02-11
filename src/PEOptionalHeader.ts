@@ -58,6 +58,10 @@ class PEOptionalHeader32 {
         return new PEOptionalHeader32(data)
     }
 
+    getSectionCount() {
+        return this.numberOfRvaAndSizes
+    }
+
     toString() {
         return "".concat(
             `Image base: ${this.imageBase}\n`,
@@ -113,7 +117,7 @@ export class PEOptionalHeader {
         this.extraFields = this.peFormat === "PE32" ? PEOptionalHeader32.Parse(data.subarray(startOfExtraFields)) : PEOptionalHeader64.Parse(data.subarray(startOfExtraFields))
     }
 
-    static Parse(data: Buffer): PEOptionalHeader {
+    static Parse(data: Buffer, sizeOfOptionalHeader: number): PEOptionalHeader {
         return new PEOptionalHeader(data)
     }
 

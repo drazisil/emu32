@@ -1,6 +1,7 @@
 import {NotEnoughDataError} from "./errors.ts"
 import { NTHeaders } from "./NTHeaders.ts"
-import { PESectionTable, PESection } from "./PESectionTable.ts"
+import { PESectionTable } from "./PESectionTable.ts"
+import { PESection } from "./PESection.ts"
 
 export class PEFile {
     
@@ -10,7 +11,7 @@ export class PEFile {
     
     constructor(data: Buffer) {
         this.ntHeaders = NTHeaders.parse(data)
-        this.peSectionTable = PESectionTable.parse(data)
+        this.peSectionTable = PESectionTable.parse(data.subarray(this.ntHeaders.getStartOfOptionalHeader() + this.ntHeaders.getSizeOfOptionalHeader()), this.ntHeaders.getSectionCount())
     }
     static parse(data: Buffer): PEFile {
         if (data.byteLength < 4)

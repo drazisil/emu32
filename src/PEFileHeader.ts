@@ -15,7 +15,7 @@ export class PEFileHeader {
     private numberOfSymbols // 4
     private sizeOfOptionalHeader // 2
     private characteristics // 2
-
+    
     private constructor(data: Buffer) {
         this.machine = machineIDToString(getShort(data, 0))
         this.numberOfSections = getShort(data, 2)
@@ -24,7 +24,10 @@ export class PEFileHeader {
         this.numberOfSymbols = getLong(data, 12)
         this.sizeOfOptionalHeader = getShort(data, 16)
         this.characteristics = getShort(data, 18)
-
+        
+    }
+    getSectionCount(): number {
+        return this.numberOfSections
     }
     getSizeOfOptionalHeader() {
         return this.sizeOfOptionalHeader

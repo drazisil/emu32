@@ -3,14 +3,21 @@ import { PEFileHeader } from "./PEFileHeader.ts";
 
 export class NTHeaders {
     private fileHeader: PEFileHeader
+    private startOfOptionalHeader: number
     private optionalHeader: PEOptionalHeader;
-
-
+    
+    
     private constructor(data: Buffer) {
         this.validatePESignature(data);
         this.fileHeader = PEFileHeader.Parse(data.subarray(4))
-        const startOfOptionAlHeader = PEFileHeader.getSizeOf() + 4
-        this.optionalHeader = PEOptionalHeader.Parse(data.subarray(startOfOptionAlHeader, startOfOptionAlHeader + this.fileHeader.getSizeOfOptionalHeader()))
+        this.startOfOptionalHeader = PEFileHeader.getSizeOf() + 4
+        this.optionalHeader = PEOptionalHeader.Parse(data.subarray(this.startOfOptionalHeader, this.startOfOptionalHeader + this.fileHeader.getSizeOfOptionalHeader()), this.fileHeader.getSizeOfOptionalHeader())
+    }
+    getSizeOf(): number {
+        return this.fileHeader.getSizeOfOptionalHeader() + this.fileHeader.getSizeOfOptionalHeader()
+    }
+    getSectionCount(): number {
+        return this.fileHeader.getSectionCount()
     }
     private validatePESignature(data: Buffer) {
         const PE_SIGNATURE = "PE\0\0";
@@ -20,6 +27,14 @@ export class NTHeaders {
     }
     static parse(data: Buffer): any {
         return new NTHeaders(data);
+    }
+
+    getSizeOfOptionalHeader() {
+        return this.fileHeader.getSizeOfOptionalHeader()
+    }
+
+    getStartOfOptionalHeader() {
+        return this.startOfOptionalHeader
     }
 
     toString(): string {
